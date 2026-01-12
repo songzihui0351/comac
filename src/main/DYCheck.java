@@ -75,6 +75,7 @@ public class DYCheck {
 
     private Workbook excelReader(String filePath) throws IOException {
         InputStream inputStream = new FileInputStream(filePath);
+        inputStream.close();
         return WorkbookFactory.create(inputStream);
     }
 
