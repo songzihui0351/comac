@@ -1,6 +1,5 @@
 package main;
 
-
 import com.spire.xls.CellRange;
 import com.spire.xls.HorizontalAlignType;
 import com.spire.xls.VerticalAlignType;
@@ -62,6 +61,7 @@ public class BillCheck {
         com.spire.xls.Workbook wb = new com.spire.xls.Workbook();
         Worksheet sheet = wb.getWorksheets().get(0);
         sheet.insertArray(makeMatrix(generateBill()), 1, 1);
+
         sheet.setName(SHEET_NAME);
         setStyle(sheet);
         //保存文档
@@ -96,21 +96,24 @@ public class BillCheck {
         return matrix;
     }
 
-    private void setStyle(Worksheet worksheet) {
+    private void setStyle(Worksheet sheet) {
         //行高列宽
-        CellRange global = worksheet.getAllocatedRange();
+        CellRange global = sheet.getAllocatedRange();
+        CellRange dateRange = sheet.getCellRange(2, 4, sheet.getLastRow(), 5);
         global.setRowHeight(20);
         global.setColumnWidth(5);
         for (int i = 2; i < 12; i++) {
-            worksheet.setColumnWidth(i, 15);
+            sheet.setColumnWidth(i, 15);
         }
+        //日期
+        dateRange.getCellStyle().setNumberFormat("yyyy-M-d");
         //居中
         global.getCellStyle().setHorizontalAlignment(HorizontalAlignType.Center);
         global.getCellStyle().setVerticalAlignment(VerticalAlignType.Center);
         //字体
         global.getCellStyle().getExcelFont().setFontName("宋体");
         global.getCellStyle().getExcelFont().setSize(12);
-        CellRange header = worksheet.getCellRange(1, 1, 1, worksheet.getColumns().length);
+        CellRange header = sheet.getCellRange(1, 1, 1, sheet.getColumns().length);
         header.getCellStyle().getExcelFont().isBold(true);
         header.getCellStyle().getExcelFont().setSize(14);
         //背景颜色
