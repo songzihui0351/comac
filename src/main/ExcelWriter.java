@@ -76,7 +76,7 @@ public class ExcelWriter {
         setStyle(coreSheet);
         setStyle(supportSheet);
         //保存文档
-        wb.saveToFile("output/考勤统计.xlsx");
+        wb.saveToFile("output/东营住宿.xlsx");
     }
 
     public void write(List<String> header, ArrayList<Attendance> verifiedList, ArrayList<Attendance> unverifiedList) {
@@ -139,6 +139,10 @@ public class ExcelWriter {
         }
         CellRange[] ty = worksheet.findAllString("太", false, false);
         for (CellRange cell : ty) {
+            cell.getStyle().setColor(new Color(130, 180, 70));
+        }
+        CellRange[] jyg = worksheet.findAllString("嘉", false, false);
+        for (CellRange cell : jyg) {
             cell.getStyle().setColor(new Color(130, 180, 70));
         }
         String range = "A2" + ":C" + worksheet.getRows().length;

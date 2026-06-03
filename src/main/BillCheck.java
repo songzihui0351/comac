@@ -15,7 +15,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static main.Constant.*;
 import static main.FileHelper.folderReader;
@@ -24,75 +28,120 @@ public class BillCheck {
 
 
     public void start() throws IOException {
-        HashMap<String, Bill> bills = generateBill();
-        writeToExcel();
+        ArrayList<Bill> bills = generateBill();
+        for (String name : HOTEL_NAME) {
+            writeToExcel(bills, name);
+        }
     }
 
-
-    private HashMap<String, Bill> generateBill() throws IOException {
+    private ArrayList<Bill> generateBill() throws IOException {
         File[] files = folderReader(BILL_PATH);
         Workbook workbook;
         HashMap<String, Bill> map = new HashMap<>();
+        ArrayList<Bill> bills = new ArrayList<>();
         for (File file : files) {
-            try (InputStream inputStream = new FileInputStream(new File(file.getPath()))) {
+            try (InputStream inputStream = new FileInputStream(file.getPath())) {
                 workbook = WorkbookFactory.create(inputStream);
                 Sheet sheet = workbook.getSheetAt(0);
                 int rowNum = sheet.getLastRowNum();
+
                 for (int i = 2; i < rowNum; i++) {
                     Row row = sheet.getRow(i);
                     if (row == null) continue;
                     String name = row.getCell(1).getStringCellValue();
                     if (name == null || name.isBlank()) continue;
-                    String dept = row.getCell(2).getStringCellValue();
+                    String dept = getDept(row.getCell(2).getStringCellValue());
                     String date = row.getCell(3).getStringCellValue();
+                    String lastDate = "";
+                    Pattern pattern = Pattern.compile("\\d{1,2}月(\\d{1,2})日");
+                    Matcher matcher = pattern.matcher(file.getName());
+                    if (matcher.find()) {
+                        lastDate = String.format("%02d", Integer.parseInt(matcher.group(1)));
+                    }
+                    String hotel = row.getCell(4).getStringCellValue();
                     String remark = row.getCell(5).getStringCellValue();
-                    String key = name + "-" + dept;
-                    if (map.containsKey(key)) {
-                        map.get(key).incrementDays(date, remark);
+                    String key = name + "-" + dept + "-" + hotel;
+                    if (remark.equals("入住")) {
+                        Bill bill = new Bill(name, dept, date, hotel);
+                        if (lastDate.equals("25")) {
+                            bill.setLastDay("25日在住");
+                            bill.setDays(0);
+                        }
+                        map.put(key, bill);
+                    } else if (remark.equals("离开")) {
+                        Bill bill = map.get(key);
+                        if (bill == null) {
+                            continue;
+                        }
+                        bill.incrementDays(date, remark);
+                        bills.add(bill);
+                        map.remove(key);
+                    } else if (map.containsKey(key)) {
+                        Bill bill = map.get(key);
+                        if (lastDate.equals("25")) {
+                            bill.setLastDay("25日在住");
+                            remark = bill.getLastDay();
+                        }
+                        bill.incrementDays(date, remark);
                     } else {
-                        map.put(key, new Bill(name, dept, date));
+                        for (String k : map.keySet()) {
+                            if (k.startsWith(name + "-" + dept)) {
+                                Bill bill = map.get(k);
+                                if (bill == null) {
+                                    continue;
+                                }
+                                bill.incrementDays(date, remark);
+                                bills.add(bill);
+                                map.remove(k);
+                                break;
+                            }
+                        }
+                        map.put(key, new Bill(name, dept, date, hotel));
                     }
                 }
             }
         }
-        return map;
+        bills.addAll(map.values());
+        return bills;
     }
 
-    public void writeToExcel() throws IOException {
+    public void writeToExcel(ArrayList<Bill> bills, String sheetName) throws IOException {
         com.spire.xls.Workbook wb = new com.spire.xls.Workbook();
         Worksheet sheet = wb.getWorksheets().get(0);
-        sheet.insertArray(makeMatrix(generateBill()), 1, 1);
-        sheet.setName(SHEET_NAME);
+        List<Bill> list = bills.stream().filter(bill -> bill.getHotel().equals(sheetName)).toList();
+        sheet.insertArray(makeMatrix(list), 1, 1);
         setStyle(sheet);
         //保存文档
-        wb.saveToFile("output/" + SHEET_NAME + ".xlsx");
+        wb.saveToFile("output/" + sheetName + ".xlsx");
     }
 
-    private Object[][] makeMatrix(HashMap<String, Bill> map) {
-        Object[][] matrix = new Object[map.size() + 2][];
+    private Object[][] makeMatrix(List<Bill> list) {
+        Object[][] matrix = new Object[list.size() + 2][];
         matrix[0] = getHeader();
         int i = 1;
         int total = 0;
-        for (Bill bill : map.values()) {
+        for (Bill bill : list) {
             Object[] row = new Object[11];
+            int totalDays = 0;
             row[0] = i;
             row[1] = bill.getDept();
             row[2] = bill.getName();
             row[3] = bill.getArrival();
             row[4] = bill.getDeparture();
             row[5] = bill.getDays();
-            row[6] = 0;
-            row[7] = bill.getDays();
+            row[6] = bill.getLastDay() == null ? 0 : 1;
+            totalDays = (int) row[5] + (int) row[6];
+            row[7] = totalDays;
             row[8] = PRICE;
-            row[9] = bill.getDays() * PRICE;
-            row[10] = "";
+            row[9] = totalDays * PRICE;
+            row[10] = bill.getLastDay();
+            total += totalDays * PRICE;
             matrix[i++] = row;
-            total += bill.getDays() * PRICE;
         }
         Object[] row = new Object[11];
         row[8] = "总计";
         row[9] = total;
-        matrix[map.size() + 1] = row;
+        matrix[list.size() + 1] = row;
         return matrix;
     }
 
@@ -136,6 +185,19 @@ public class BillCheck {
         header[9] = "金额（元）";
         header[10] = "备注";
         return header;
+    }
+
+    private String getDept(String dept) {
+        if (dept.contains("安全")) {
+            return "安全质量适航";
+        }
+        if (dept.contains("领导")) {
+            return "领导";
+        }
+        if (dept.contains("综合")) {
+            return "综合办";
+        }
+        return dept;
     }
 
 }

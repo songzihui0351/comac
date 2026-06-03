@@ -145,34 +145,39 @@ public class TotalCheck {
             workbook = excelReader(file.getPath());
             String date = dateExtractor(file.getName());
             Row row;
-            Sheet sheet;
-            for (int sheetNum = 0; sheetNum < workbook.getNumberOfSheets(); sheetNum++) {
-                sheet = workbook.getSheetAt(sheetNum);
-                String city = String.valueOf(sheet.getSheetName().charAt(0));
-                for (int rowNum = 2; rowNum < sheet.getLastRowNum(); rowNum++) {
-                    row = sheet.getRow(rowNum);
-                    if (row == null) {
-                        break;
-                    }
-                    if (row.getCell(1).getStringCellValue().isBlank()) {
-                        continue;
-                    }
-                    String name = row.getCell(1).getStringCellValue().strip();
-                    String dept = getDept((row.getCell(2).getStringCellValue())).strip();
-                    String hotel = getDept((row.getCell(4).getStringCellValue())).strip();
-                    if (name.length() > 10) {
-                        continue;
-                    }
-                    String key = name + "-" + dept;
-                    if (map.containsKey(key)) {
-                        Attendance attendance = map.get(key);
-                        attendance.getDateSet().add(date);
-                        int idx = ((Integer.parseInt((date.split("\\.")[1]))) - 26 + DAYS) % DAYS;
-                        attendance.getDateList()[idx] = city;
-                    } else {
-                        map.put(key, new Attendance(name, dept, hotel, city, getMembership(sheetNum), date, DAYS));
+            Sheet sheet = null;
+            try {
+                for (int sheetNum = 0; sheetNum < workbook.getNumberOfSheets(); sheetNum++) {
+                    sheet = workbook.getSheetAt(sheetNum);
+                    String city = String.valueOf(sheet.getSheetName().charAt(0));
+                    for (int rowNum = 2; rowNum < sheet.getLastRowNum(); rowNum++) {
+                        row = sheet.getRow(rowNum);
+                        if (row == null) {
+                            break;
+                        }
+                        if (row.getCell(1).getStringCellValue().isBlank()) {
+                            continue;
+                        }
+                        String name = row.getCell(1).getStringCellValue().strip();
+                        String dept = getDept((row.getCell(2).getStringCellValue())).strip();
+                        String hotel = getDept((row.getCell(4).getStringCellValue())).strip();
+                        if (name.length() > 10) {
+                            continue;
+                        }
+                        String key = name + "-" + dept;
+                        if (map.containsKey(key)) {
+                            Attendance attendance = map.get(key);
+                            attendance.getDateSet().add(date);
+                            int idx = ((Integer.parseInt((date.split("\\.")[1]))) - 26 + DAYS) % DAYS;
+                            attendance.getDateList()[idx] = city;
+                        } else {
+                            map.put(key, new Attendance(name, dept, hotel, city, getMembership(sheetNum), date, DAYS));
+                        }
                     }
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println(file.getName() + " - " + sheet.getSheetName());
             }
         }
         return map;

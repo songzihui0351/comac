@@ -1,4 +1,6 @@
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.ruoyi</groupId>
@@ -7,55 +9,80 @@
     <name>Archetype - comac</name>
     <url>http://maven.apache.org</url>
 
+    <!-- 统一版本配置，无冲突 -->
+    <properties>
+        <java.version>17</java.version>
+        <!-- 统一编译器版本为Java 17，与build插件一致 -->
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <poi.version>5.2.5</poi.version>
+        <log4j2.version>2.20.0</log4j2.version>
+        <lombok.version>1.18.30</lombok.version>
+        <spire.xls.version>5.3.0</spire.xls.version>
+        <junit.version>4.13.1</junit.version>
+        <commons.io.version>2.17.0</commons.io.version>
+    </properties>
+
     <dependencies>
-        <!--读取excel文件-->
+        <!-- ==================== Apache POI 核心依赖（完整保留） ==================== -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi</artifactId>
-            <version>4.1.2</version>
+            <version>${poi.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
-            <version>4.1.2</version>
+            <version>${poi.version}</version>
+        </dependency>
+
+        <!-- ==================== Log4j2 日志依赖（修复版） ==================== -->
+        <!-- 修复1：artifactId从错误的log4j2-api改为官方正确的log4j-api -->
+        <!-- 修复2：移除重复的2.10.0版本，统一使用2.20.0，无版本冲突 -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j2.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>2.10.0</version>
+            <version>${log4j2.version}</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-api -->
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <version>2.10.0</version>
-        </dependency>
+
+        <!-- ==================== 您原有的其他依赖（完整保留） ==================== -->
+        <!-- Lombok 代码简化工具 -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.30</version>
+            <version>${lombok.version}</version>
             <scope>provided</scope>
         </dependency>
+
+        <!-- Spire XLS 免费版Excel处理工具 -->
         <dependency>
             <groupId>e-iceblue</groupId>
             <artifactId>spire.xls.free</artifactId>
-            <version>5.3.0</version>
+            <version>${spire.xls.version}</version>
         </dependency>
+
+        <!-- JUnit 单元测试（优化scope为test，符合常规规范，不影响生产打包） -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.1</version>
-            <scope>compile</scope>
+            <version>${junit.version}</version>
+            <scope>test</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
+
+        <!-- Apache Commons IO 工具包 -->
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.17.0</version>
+            <version>${commons.io.version}</version>
         </dependency>
-
     </dependencies>
 
+    <!-- 第三方仓库配置（完整保留） -->
     <repositories>
         <repository>
             <id>com.e-iceblue</id>
@@ -64,4 +91,18 @@
         </repository>
     </repositories>
 
+    <!-- 编译插件配置（统一Java 17版本，无冲突） -->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.10.1</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

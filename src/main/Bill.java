@@ -9,13 +9,16 @@ import java.util.Objects;
 public class Bill {
     private String name;
     private String dept;
+    private String hotel;
     private String arrival;
     private String departure;
     private int days;
+    private String lastDay;
 
-    public Bill(String name, String dept, String date) {
+    public Bill(String name, String dept, String date, String hotel) {
         this.name = name;
         this.dept = dept;
+        this.hotel = hotel;
         this.arrival = formater(date);
         this.departure = formater(date);
         this.days = 1;
@@ -23,7 +26,7 @@ public class Bill {
 
     public void incrementDays(String date, String remark) {
         this.departure = formater(date);
-        if (remark.equals("离开")) return;
+        if (remark.equals("离开") || remark.equals("25日在住")) return;
         this.days++;
     }
 
